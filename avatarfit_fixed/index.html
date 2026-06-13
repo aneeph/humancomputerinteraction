@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AvatarFit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --pink:   #FF3D9A;
+      --blue:   #3DBBFF;
+      --gold:   #FFB800;
+      --purple: #A855F7;
+      --green:  #22D3A0;
+      --bg1: #4C1D95;
+      --bg2: #1E40AF;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(160deg, #0EA5E9 0%, #7C3AED 45%, #EC4899 100%);
+      font-family: 'Nunito', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.8rem;
+      padding: 2rem;
+      overflow: hidden;
+      position: relative;
+      opacity: 0;
+      animation: pageIn 0.45s ease 0.05s forwards;
+    }
+    @keyframes pageIn { to { opacity: 1; } }
+
+    /* ── Decorative stars ── */
+    .stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .star {
+      position: absolute;
+      font-size: 1.2rem;
+      animation: starFloat linear infinite;
+      opacity: 0.55;
+      user-select: none;
+    }
+    @keyframes starFloat {
+      0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.55; }
+      50%  { opacity: 0.9; }
+      100% { transform: translateY(-30px) rotate(25deg) scale(1.1); opacity: 0.55; }
+    }
+
+    /* ── Logo ── */
+    .logo-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+      animation: bounceDown 0.6s cubic-bezier(.22,1,.36,1) both;
+      position: relative;
+      z-index: 1;
+    }
+    .logo {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(3rem, 8vw, 4.5rem);
+      color: #fff;
+      letter-spacing: 0.04em;
+      text-shadow:
+        0 4px 0 rgba(0,0,0,0.25),
+        0 8px 30px rgba(0,0,0,0.2);
+      filter: drop-shadow(0 0 20px rgba(255,255,255,0.3));
+    }
+    .logo span { color: #FFE066; text-shadow: 0 4px 0 #C97D00, 0 8px 20px rgba(255,224,102,0.5); }
+    .tagline {
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(8px);
+      border: 1.5px solid rgba(255,255,255,0.35);
+      border-radius: 50px;
+      padding: 0.3rem 1.1rem;
+      font-size: 0.78rem;
+      color: #fff;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    /* ── Section title ── */
+    .section-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.25rem;
+      color: #fff;
+      text-align: center;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      position: relative; z-index: 1;
+      animation: bounceDown 0.6s cubic-bezier(.22,1,.36,1) 0.1s both;
+    }
+
+    /* ── Characters ── */
+    .characters {
+      display: flex;
+      gap: 1.4rem;
+      position: relative; z-index: 1;
+      animation: bounceDown 0.6s cubic-bezier(.22,1,.36,1) 0.15s both;
+    }
+
+    .char-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6rem;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .char-img-wrap {
+      width: 130px;
+      height: 170px;
+      background: #fff;
+      border-radius: 24px;
+      border: 4px solid var(--card-color, #fff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 6px 0 var(--card-shadow, #aaa), 0 12px 30px rgba(0,0,0,0.2);
+      transition: transform 0.18s cubic-bezier(.22,1,.36,1), box-shadow 0.18s;
+    }
+    .char-img-wrap img {
+      height: 88%;
+      object-fit: contain;
+      transition: transform 0.2s;
+    }
+
+    /* Per-character colors */
+    .char-card[data-char="1"] { --card-color: #FF3D9A; --card-shadow: #b3006b; }
+    .char-card[data-char="2"] { --card-color: #3DBBFF; --card-shadow: #006ea3; }
+    .char-card[data-char="3"] { --card-color: #FFB800; --card-shadow: #a37600; }
+
+    /* Selected state */
+    .char-card.selected .char-img-wrap {
+      transform: translateY(-8px) scale(1.04);
+      box-shadow: 0 10px 0 var(--card-shadow, #aaa), 0 20px 40px rgba(0,0,0,0.3);
+    }
+    .char-card.selected .char-img-wrap img { transform: scale(1.06); }
+
+    /* Hover (non-selected) */
+    .char-card:not(.selected):hover .char-img-wrap {
+      transform: translateY(-4px);
+      box-shadow: 0 9px 0 var(--card-shadow, #aaa), 0 16px 30px rgba(0,0,0,0.25);
+    }
+    .char-card:active .char-img-wrap {
+      transform: translateY(0) scale(0.97) !important;
+      box-shadow: 0 3px 0 var(--card-shadow, #aaa), 0 6px 15px rgba(0,0,0,0.2) !important;
+    }
+
+    /* Selected badge */
+    .char-img-wrap::after {
+      content: '✓';
+      position: absolute;
+      top: 8px; right: 8px;
+      width: 26px; height: 26px;
+      background: var(--card-color, #fff);
+      border-radius: 50%;
+      border: 2.5px solid #fff;
+      font-size: 0.8rem;
+      font-weight: 900;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0) rotate(-45deg);
+      transition: opacity 0.2s, transform 0.25s cubic-bezier(.22,1,.36,1);
+    }
+    .char-card.selected .char-img-wrap::after {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+
+    .char-name {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.05rem;
+      color: #fff;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      transition: transform 0.18s;
+    }
+    .char-card.selected .char-name {
+      transform: scale(1.1);
+    }
+
+    /* ── Exercise section ── */
+    .exercise-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.85rem;
+      position: relative; z-index: 1;
+      animation: bounceDown 0.6s cubic-bezier(.22,1,.36,1) 0.22s both;
+    }
+
+    .exercise-grid {
+      display: flex;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 480px;
+    }
+
+    .ex-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.4rem;
+      background: var(--pill-bg);
+      border: none;
+      border-bottom: 4px solid var(--pill-shadow);
+      border-radius: 18px;
+      color: #fff;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 900;
+      font-size: 0.92rem;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 4px 16px var(--pill-glow);
+      transition: transform 0.12s cubic-bezier(.22,1,.36,1), box-shadow 0.12s, border-bottom-width 0.08s;
+      -webkit-tap-highlight-color: transparent;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .ex-pill:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px var(--pill-glow);
+    }
+    .ex-pill:active {
+      transform: translateY(2px);
+      border-bottom-width: 2px;
+      box-shadow: 0 2px 8px var(--pill-glow);
+    }
+
+    /* Pill colors */
+    .ex-pill[data-ex="squat"]  { --pill-bg:#FF6B6B; --pill-shadow:#b30000; --pill-glow:rgba(255,107,107,0.5); }
+    .ex-pill[data-ex="curl"]   { --pill-bg:#22D3A0; --pill-shadow:#00876a; --pill-glow:rgba(34,211,160,0.5); }
+    .ex-pill[data-ex="lunge"]  { --pill-bg:#F59E0B; --pill-shadow:#a36400; --pill-glow:rgba(245,158,11,0.5); }
+    .ex-pill[data-ex="plank"]  { --pill-bg:#A855F7; --pill-shadow:#6b00c8; --pill-glow:rgba(168,85,247,0.5); }
+
+    /* ── Divider ── */
+    .divider-line {
+      width: 50px; height: 3px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 3px;
+      position: relative; z-index: 1;
+    }
+
+    /* ── Animations ── */
+    @keyframes bounceDown {
+      from { opacity: 0; transform: translateY(-18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Decorative floating stars -->
+  <div class="stars" id="stars"></div>
+
+  <div class="logo-wrap">
+    <div class="logo">Avatar<span>Fit</span></div>
+    <div class="tagline">✨ Your personal form coach ✨</div>
+  </div>
+
+  <div class="section-title">👤 Choose your player</div>
+
+  <div class="characters" id="characters">
+    <div class="char-card selected" data-char="1">
+      <div class="char-img-wrap">
+        <img src="avatars/character1.png" alt="Alex"/>
+      </div>
+      <div class="char-name">Alex</div>
+    </div>
+    <div class="char-card" data-char="2">
+      <div class="char-img-wrap">
+        <img src="avatars/character2.png" alt="Max"/>
+      </div>
+      <div class="char-name">Max</div>
+    </div>
+    <div class="char-card" data-char="3">
+      <div class="char-img-wrap">
+        <img src="avatars/character3.png" alt="Sam"/>
+      </div>
+      <div class="char-name">Sam</div>
+    </div>
+  </div>
+
+  <div class="divider-line"></div>
+
+  <div class="exercise-section">
+    <div class="section-title" style="font-size:1.1rem;">🏋️ Pick your workout!</div>
+    <div class="exercise-grid" id="exerciseGrid">
+      <div class="ex-pill" data-ex="squat">🦵 Squat</div>
+      <div class="ex-pill" data-ex="curl">💪 Bicep Curl</div>
+      <div class="ex-pill" data-ex="lunge">🏃 Lunge</div>
+      <div class="ex-pill" data-ex="plank">🤸 Plank</div>
+    </div>
+  </div>
+
+  <script>
+    /* ── Floating stars ── */
+    const starChars = ['⭐','✨','🌟','💫','⚡'];
+    const starsEl   = document.getElementById('stars');
+    for (let i = 0; i < 18; i++) {
+      const s = document.createElement('div');
+      s.className = 'star';
+      s.textContent = starChars[i % starChars.length];
+      s.style.cssText = `
+        left: ${Math.random() * 100}%;
+        top:  ${Math.random() * 100}%;
+        font-size: ${0.8 + Math.random() * 1.2}rem;
+        animation-duration: ${3 + Math.random() * 4}s;
+        animation-delay: ${-Math.random() * 4}s;
+        animation-direction: ${Math.random() > 0.5 ? 'alternate' : 'alternate-reverse'};
+      `;
+      starsEl.appendChild(s);
+    }
+
+    /* ── Character selection ── */
+    let selectedChar = 1;
+    document.getElementById('characters').addEventListener('click', e => {
+      const card = e.target.closest('.char-card');
+      if (!card) return;
+      selectedChar = parseInt(card.dataset.char);
+      document.querySelectorAll('.char-card').forEach(c =>
+        c.classList.toggle('selected', c === card));
+    });
+
+    /* ── Exercise launch ── */
+    document.getElementById('exerciseGrid').addEventListener('click', e => {
+      const pill = e.target.closest('.ex-pill');
+      if (!pill) return;
+      pill.style.transform = 'translateY(3px)';
+      pill.style.borderBottomWidth = '2px';
+      setTimeout(() => {
+        window.location.href = `workout.html?char=${selectedChar}&ex=${pill.dataset.ex}`;
+      }, 130);
+    });
+  </script>
+</body>
+</html>
